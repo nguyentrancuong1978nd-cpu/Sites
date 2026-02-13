@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cửa Hàng Vật Phẩm Play Together</title>
+    <style>
+        :root {
+            --primary: #4ecca3;
+            --secondary: #45b393;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text-white: #ffffff;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-dark); 
+            color: var(--text-white); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin: 0; 
+            padding: 20px; 
+        }
+
+        /* Header & Giỏ hàng */
+        header {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            background: var(--bg-card);
+            padding: 15px 25px;
+            border-radius: 15px;
+            border: 1px solid var(--primary);
+        }
+
+        .cart-status {
+            background: var(--primary);
+            color: var(--bg-dark);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        /* Lưới sản phẩm */
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .item-card {
+            background: var(--bg-card);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: 0.3s;
+            position: relative;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px rgba(78, 204, 163, 0.2);
+        }
+
+        .item-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            background: #0f3460;
+        }
+
+        .item-info {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .item-name {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .btn-add {
+            background: var(--primary);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: var(--bg-dark);
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-add:hover { background: var(--secondary); transform: scale(1.1); }
+
+        /* Form xác nhận nạp */
+        .checkout-section {
+            width: 100%;
+            max-width: 400px;
+            background: var(--bg-card);
+            margin-top: 40px;
+            padding: 25px;
+            border-radius: 20px;
+            border: 2px solid var(--primary);
+        }
+
+        input {
+            width: 100%; padding: 12px; margin: 10px 0;
+            border-radius: 8px; border: 1px solid var(--primary);
+            background: #0f3460; color: white; box-sizing: border-box;
+        }
+
+        .btn-submit {
+            width: 100%; padding: 15px; background: var(--primary);
+            border: none; border-radius: 10px; font-weight: bold; cursor: pointer;
+        }
+
+        /* Loading & Popup */
+        #loading { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 style="margin:0; color:var(--primary)">PLAY SHOP 2026</h2>
+    <div class="cart-status">Giỏ hàng: <span id="cart-count">0</span></div>
+</header>
+
+<div class="shop-grid" id="shop-grid">
+    </div>
+
+<div class="checkout-section">
+    <h3 style="text-align:center; color:var(--primary)">XÁC NHẬN ĐƠN HÀNG</h3>
+    <input type="text" id="gameId" placeholder="Nhập ID Nhân vật (VD: @GamePlayer)">
+    <input type="text" id="cardCode" placeholder="Mã nạp: PLAY-TOGETHER-2026">
+    <button class="btn-submit" onclick="processOrder()">XÁC NHẬN NẠP NGAY</button>
+</div>
+
+<div id="loading">
+    <div class="loader"></div>
+    <p style="margin-top: 15px;">Đang kết nối Server Play Together...</p>
+</div>
+
+<script>
+    // Danh sách sản phẩm phong phú
+    const products = [
+        { id: 1, name: "1,000 Đá Quý", img: "https://images.unsplash.com/photo-1599481238640-4c1288750d7a?w=200" },
+        { id: 2, name: "Siêu Xe Bugatti", img: "https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=200" },
+        { id: 3, name: "Biệt Thự Hồ Bơi", img: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=200" },
+        { id: 4, name: "Cần Câu VIP 2026", img: "https://images.unsplash.com/photo-1541544537156-7627a7a4aa1c?w=200" },
+        { id: 5, name: "Gói Thời Trang Vàng", img: "https://images.unsplash.com/photo-1539109132314-34755249ff95?w=200" },
+        { id: 6, name: "Pet Khủng Long Rồng", img: "https://images.unsplash.com/photo-1555685812-4b943f1cb0eb?w=200" }
+    ];
+
+    let cartCount = 0;
+    const SECRET_CODE = "PLAY-TOGETHER-2026";
+
+    // Hiển thị sản phẩm lên trang web
+    const grid = document.getElementById('shop-grid');
+    products.forEach(p => {
+        grid.innerHTML += `
+            <div class="item-card">
+                <img src="${p.img}" class="item-img" alt="${p.name}">
+                <div class="item-info">
+                    <span class="item-name">${p.name}</span>
+                    <button class="btn-add" onclick="addToCart()">+</button>
+                </div>
+            </div>
+        `;
+    });
+
+    function addToCart() {
+        cartCount++;
+        document.getElementById('cart-count').innerText = cartCount;
+        alert("Đã thêm vào giỏ hàng!");
+    }
+
+    function processOrder() {
+        const id = document.getElementById('gameId').value;
+        const code = document.getElementById('cardCode').value.trim();
+
+        if (!id || cartCount === 0) {
+            alert("Vui lòng chọn vật phẩm và nhập ID!");
+            return;
+        }
+
+        document.getElementById('loading').style.display = 'flex';
+
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            if (code === SECRET_CODE) {
+                alert(`CHÚC MỪNG!\n${cartCount} vật phẩm đang được chuyển đến tài khoản ${id}.\nVui lòng kiểm tra hòm thư!`);
+                cartCount = 0;
+                document.getElementById('cart-count').innerText = "0";
+            } else {
+                alert("LỖI: Mã thẻ không đúng hoặc đã hết hạn!");
+            }
+        }, 3000);
+    }
+</script>
+
+</body>
+</html>
